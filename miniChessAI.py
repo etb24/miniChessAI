@@ -74,7 +74,7 @@ class MiniChess:
         possible_moves = self.generate_moves_for_piece(piece, start, board)
 
         #check if the move is in the allowed moves
-        return move in possible_moves  # ✅ No call to valid_moves() anymore
+        return move in possible_moves
 
 
     """
@@ -99,9 +99,9 @@ class MiniChess:
                 piece_color = "white" if piece[0] == 'w' else "black"
                 
                 if piece_color != current_turn:
-                    continue  # Skip opponent's pieces
+                    continue  #skip opponent's pieces
                 
-                # Generate possible moves based on piece type
+                #generate possible moves based on piece type
                 possible_moves = self.generate_moves_for_piece(piece, (row, col), board)
                 
                 valid_moves_list.extend(possible_moves)
@@ -110,8 +110,7 @@ class MiniChess:
     
 
     def generate_moves_for_piece(self, piece, position, board):
-        #Calls the appropriate movement function based on the piece type.
-        print(f"Generating moves for {piece} at {position}")
+        #calls the appropriate movement function based on the piece type.
         row, col = position
         piece_type = piece[1]
         
@@ -133,13 +132,13 @@ class MiniChess:
         return []
     
     def generate_king_moves(self, position):
-        #Generates all valid king moves (one step in any direction)."""
+        #generates all valid king moves (one step in any direction).
         row, col = position
         moves = []
 
         directions = [(-1, -1), (-1, 0), (-1, 1), 
                   (0, -1),        (0, 1), 
-                  (1, -1), (1, 0), (1, 1)]  # All 8 directions
+                  (1, -1), (1, 0), (1, 1)]  #all 8 directions
 
         for dr, dc in directions:
             new_row, new_col = row + dr, col + dc
@@ -149,32 +148,54 @@ class MiniChess:
         return moves
     
     def generate_queen_moves(self, position, board):
-        #Generates all valid queen moves (combining rook and bishop moves).
+        #generates all valid queen moves (combining rook and bishop moves).
         return self.generate_rook_moves(position, board) + self.generate_bishop_moves(position, board)
     
 
-    def generate_bishop_moves(self, position, board):
-        #Generates all valid bishop moves (diagonal only).
+    def generate_rook_moves(self, position, board):
+        #generates all valid rook moves (horizontal & vertical lines).
         row, col = position
         moves = []
-        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # Diagonal directions
+
+        #rook moves: Up, Down, Left, Right
+        directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]  
+
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            while 0 <= r < 5 and 0 <= c < 5:  #stay within board boundaries
+                if board[r][c] == '.':  #empty square → valid move
+                    moves.append(((row, col), (r, c)))
+                else:
+                    if board[r][c][0] != board[row][col][0]:  #opponent piece → capture allowed
+                        moves.append(((row, col), (r, c)))  
+                    break  #stop if hitting any piece (cannot move past it)
+                r += dr
+                c += dc  #keep moving in the same direction
+
+        return moves
+
+    def generate_bishop_moves(self, position, board):
+        #generates all valid bishop moves (diagonal only).
+        row, col = position
+        moves = []
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  #diagonal directions
 
         for dr, dc in directions:
             r, c = row + dr, col + dc
             while 0 <= r < 5 and 0 <= c < 5:
                 if board[r][c] == '.':  
-                    moves.append(((row, col), (r, c)))  # Valid empty move
+                    moves.append(((row, col), (r, c)))  #valid empty move
                 else:
-                    if board[r][c][0] != board[row][col][0]:  # Opponent piece
-                        moves.append(((row, col), (r, c)))  # Capture allowed
-                    break  # Stop if any piece blocks the path
+                    if board[r][c][0] != board[row][col][0]:  #opponent piece
+                        moves.append(((row, col), (r, c)))  #capture allowed
+                    break  #stop if any piece blocks the path
                 r += dr
                 c += dc
 
         return moves
     
     def generate_knight_moves(self, position):
-        #Generates all valid knight moves (L-shaped jumps).
+        #generates all valid knight moves (L-shaped jumps).
         row, col = position
         moves = []
 
@@ -191,17 +212,17 @@ class MiniChess:
         return moves
     
     def generate_pawn_moves(self, piece, position, board):
-        #Generates all valid pawn moves (forward movement + diagonal capture).
+        #generates all valid pawn moves (forward movement + diagonal capture).
         row, col = position
         moves = []
         direction = -1 if piece[0] == 'w' else 1  # White moves up, Black moves down
 
-        # Normal move forward (only if empty)
+        #normal move forward (only if empty)
         if 0 <= row + direction < 5 and board[row + direction][col] == '.':
             moves.append(((row, col), (row + direction, col)))
 
-        # Diagonal captures
-        for dc in [-1, 1]:  # Left diagonal, right diagonal
+        #diagonal captures
+        for dc in [-1, 1]:  #left diagonal, right diagonal
             new_row, new_col = row + direction, col + dc
             if 0 <= new_row < 5 and 0 <= new_col < 5:
                 if board[new_row][new_col] != '.' and board[new_row][new_col][0] != piece[0]:  # Opponent piece
