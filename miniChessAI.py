@@ -248,7 +248,7 @@ class MiniChess:
         start_row, start_col = start
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
-        target = game_state["board"][start_row][start_col] = '.'
+        game_state["board"][start_row][start_col] = '.'
         if (game_state["board"][end_row][end_col] != '.'):
             turn_count = 0
         game_state["board"][end_row][end_col] = piece
