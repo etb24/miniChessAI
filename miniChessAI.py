@@ -283,6 +283,10 @@ class MiniChess:
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
         while True:
             self.display_board(self.current_game_state)
+
+            if self.is_game_over(self.current_game_state):
+                break  #exit game if someone wins
+
             move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
             if move.lower() == 'exit':
                 print("Game exited.")
@@ -294,6 +298,21 @@ class MiniChess:
                 continue
 
             self.make_move(self.current_game_state, move)
+
+    def is_game_over(self, game_state):
+        #checks if a King has been captured and determines the winner
+        board = game_state["board"]
+        white_king_exists = any('wK' in row for row in board)
+        black_king_exists = any('bK' in row for row in board)
+
+        if not white_king_exists:
+            print("Black wins! White King has been captured.")
+            return True
+        elif not black_king_exists:
+            print("White wins! Black King has been captured.")
+            return True
+
+        return False  #game continues
 
 if __name__ == "__main__":
     game = MiniChess()
