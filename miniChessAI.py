@@ -53,7 +53,7 @@ class MiniChess:
         - boolean representing the validity of the move
     """
     def is_valid_move(self, game_state, move):
-        #checks if a move is valid by verifying piece movement rules and legality."""
+        #checks if a move is valid by verifying piece movement rules and legality.
         start, end = move
         start_row, start_col = start
         end_row, end_col = end
