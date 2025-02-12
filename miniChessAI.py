@@ -252,6 +252,11 @@ class MiniChess:
         if (game_state["board"][end_row][end_col] != '.'):
             turn_count = 0
         game_state["board"][end_row][end_col] = piece
+
+        if piece[1] == 'p':  # If moving piece is a pawn
+            if (piece[0] == 'w' and end_row == 0) or (piece[0] == 'b' and end_row == 4):  #promotion row
+                game_state["board"][end_row][end_col] = piece[0] + 'Q'  # Upgrade to Queen
+        
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
         return game_state
