@@ -53,8 +53,29 @@ class MiniChess:
         - boolean representing the validity of the move
     """
     def is_valid_move(self, game_state, move):
-        # Check if move is in list of valid moves
-        return True
+        #checks if a move is valid by verifying piece movement rules and legality."""
+        start, end = move
+        start_row, start_col = start
+        end_row, end_col = end
+
+        board = game_state["board"]
+        piece = board[start_row][start_col]
+
+        #ensure a piece is being moved
+        if piece == '.':
+            return False
+
+        #ensure the piece belongs to the correct player
+        piece_color = "white" if piece[0] == 'w' else "black"
+        if piece_color != game_state["turn"]:
+            return False
+
+        #get all moves for this piece
+        possible_moves = self.generate_moves_for_piece(piece, start, board)
+
+        #check if the move is in the allowed moves
+        return move in possible_moves  # ✅ No call to valid_moves() anymore
+
 
     """
     Returns a list of valid moves
@@ -65,10 +86,131 @@ class MiniChess:
         - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
     """
     def valid_moves(self, game_state):
-        # Return a list of all the valid moves.
-        # Implement basic move validation
-        # Check for out-of-bounds, correct turn, move legality, etc
-        return
+        valid_moves_list = []
+        board = game_state["board"]
+        current_turn = game_state["turn"]
+        
+        for row in range(5):
+            for col in range(5):
+                piece = board[row][col]
+                if piece == '.':
+                    continue  # Empty square, skip
+                
+                piece_color = "white" if piece[0] == 'w' else "black"
+                
+                if piece_color != current_turn:
+                    continue  # Skip opponent's pieces
+                
+                # Generate possible moves based on piece type
+                possible_moves = self.generate_moves_for_piece(piece, (row, col), board)
+                
+                valid_moves_list.extend(possible_moves)
+
+        return valid_moves_list
+    
+
+    def generate_moves_for_piece(self, piece, position, board):
+        #Calls the appropriate movement function based on the piece type.
+        print(f"Generating moves for {piece} at {position}")
+        row, col = position
+        piece_type = piece[1]
+        
+        if piece_type == 'K':  # King
+            return self.generate_king_moves(position)
+        
+        elif piece_type == 'Q':  # Queen
+            return self.generate_queen_moves(position, board)
+        
+        elif piece_type == 'B':  # Bishop
+            return self.generate_bishop_moves(position, board)
+        
+        elif piece_type == 'N':  # Knight
+            return self.generate_knight_moves(position)
+        
+        elif piece_type == 'p':  # Pawn
+            return self.generate_pawn_moves(piece, position, board)
+        
+        return []
+    
+    def generate_king_moves(self, position):
+        #Generates all valid king moves (one step in any direction)."""
+        row, col = position
+        moves = []
+
+        directions = [(-1, -1), (-1, 0), (-1, 1), 
+                  (0, -1),        (0, 1), 
+                  (1, -1), (1, 0), (1, 1)]  # All 8 directions
+
+        for dr, dc in directions:
+            new_row, new_col = row + dr, col + dc
+            if 0 <= new_row < 5 and 0 <= new_col < 5:
+                moves.append(((row, col), (new_row, new_col)))
+
+        return moves
+    
+    def generate_queen_moves(self, position, board):
+        #Generates all valid queen moves (combining rook and bishop moves).
+        return self.generate_rook_moves(position, board) + self.generate_bishop_moves(position, board)
+    
+
+    def generate_bishop_moves(self, position, board):
+        #Generates all valid bishop moves (diagonal only).
+        row, col = position
+        moves = []
+        directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # Diagonal directions
+
+        for dr, dc in directions:
+            r, c = row + dr, col + dc
+            while 0 <= r < 5 and 0 <= c < 5:
+                if board[r][c] == '.':  
+                    moves.append(((row, col), (r, c)))  # Valid empty move
+                else:
+                    if board[r][c][0] != board[row][col][0]:  # Opponent piece
+                        moves.append(((row, col), (r, c)))  # Capture allowed
+                    break  # Stop if any piece blocks the path
+                r += dr
+                c += dc
+
+        return moves
+    
+    def generate_knight_moves(self, position):
+        #Generates all valid knight moves (L-shaped jumps).
+        row, col = position
+        moves = []
+
+        knight_moves = [
+            (-2, -1), (-2, 1), (2, -1), (2, 1),
+            (-1, -2), (-1, 2), (1, -2), (1, 2)
+        ]
+
+        for dr, dc in knight_moves:
+            new_row, new_col = row + dr, col + dc
+            if 0 <= new_row < 5 and 0 <= new_col < 5:
+                moves.append(((row, col), (new_row, new_col)))
+
+        return moves
+    
+    def generate_pawn_moves(self, piece, position, board):
+        #Generates all valid pawn moves (forward movement + diagonal capture).
+        row, col = position
+        moves = []
+        direction = -1 if piece[0] == 'w' else 1  # White moves up, Black moves down
+
+        # Normal move forward (only if empty)
+        if 0 <= row + direction < 5 and board[row + direction][col] == '.':
+            moves.append(((row, col), (row + direction, col)))
+
+        # Diagonal captures
+        for dc in [-1, 1]:  # Left diagonal, right diagonal
+            new_row, new_col = row + direction, col + dc
+            if 0 <= new_row < 5 and 0 <= new_col < 5:
+                if board[new_row][new_col] != '.' and board[new_row][new_col][0] != piece[0]:  # Opponent piece
+                    moves.append(((row, col), (new_row, new_col)))
+
+        return moves
+
+
+
 
     """
     Modify to board to make a move
