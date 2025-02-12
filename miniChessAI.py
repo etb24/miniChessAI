@@ -248,7 +248,9 @@ class MiniChess:
         start_row, start_col = start
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
-        game_state["board"][start_row][start_col] = '.'
+        target = game_state["board"][start_row][start_col] = '.'
+        if (game_state["board"][end_row][end_col] != '.'):
+            turn_count = 0
         game_state["board"][end_row][end_col] = piece
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
@@ -281,6 +283,7 @@ class MiniChess:
     """
     def play(self):
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
+        turn_count = 0
         while True:
             self.display_board(self.current_game_state)
 
@@ -298,6 +301,11 @@ class MiniChess:
                 continue
 
             self.make_move(self.current_game_state, move)
+            turn_count += 1 #increment turn_count
+
+            if turn_count >= 20:
+                print("Draw! No captures have been made in 10 turns.")
+                break
 
     def is_game_over(self, game_state):
         #checks if a King has been captured and determines the winner
