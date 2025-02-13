@@ -94,7 +94,7 @@ class MiniChess:
             for col in range(5):
                 piece = board[row][col]
                 if piece == '.':
-                    continue  # Empty square, skip
+                    continue  #empty square, skip
                 
                 piece_color = "white" if piece[0] == 'w' else "black"
                 
@@ -215,7 +215,7 @@ class MiniChess:
         #generates all valid pawn moves (forward movement + diagonal capture).
         row, col = position
         moves = []
-        direction = -1 if piece[0] == 'w' else 1  # White moves up, Black moves down
+        direction = -1 if piece[0] == 'w' else 1  #white moves up, Black moves down
 
         #normal move forward (only if empty)
         if 0 <= row + direction < 5 and board[row + direction][col] == '.':
@@ -225,7 +225,7 @@ class MiniChess:
         for dc in [-1, 1]:  #left diagonal, right diagonal
             new_row, new_col = row + direction, col + dc
             if 0 <= new_row < 5 and 0 <= new_col < 5:
-                if board[new_row][new_col] != '.' and board[new_row][new_col][0] != piece[0]:  # Opponent piece
+                if board[new_row][new_col] != '.' and board[new_row][new_col][0] != piece[0]:  #opponent piece
                     moves.append(((row, col), (new_row, new_col)))
 
         return moves
@@ -253,9 +253,9 @@ class MiniChess:
             turn_count = 0
         game_state["board"][end_row][end_col] = piece
 
-        if piece[1] == 'p':  # If moving piece is a pawn
+        if piece[1] == 'p':  #if moving piece is a pawn
             if (piece[0] == 'w' and end_row == 0) or (piece[0] == 'b' and end_row == 4):  #promotion row
-                game_state["board"][end_row][end_col] = piece[0] + 'Q'  # Upgrade to Queen
+                game_state["board"][end_row][end_col] = piece[0] + 'Q'  #upgrade to Queen
         
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
