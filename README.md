@@ -5,11 +5,7 @@ Mini Chess is a simple 2-player chess game played on a 5x5 board with a small se
 
 Manual Play Mode: Two human players take turns.
 
-Move Validation: Only legal moves are allowed.
-
-Captures: Pieces can take opponent pieces.
-
-Pawn Promotion: Pawns become queens upon reaching the last row.
+Pawn Promotion: Pawns automatically become queens upon reaching the last row.
 
 Winning: The game ends when a king is captured.
 
