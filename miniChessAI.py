@@ -56,7 +56,7 @@ class MiniChess:
         #checks if a move is valid by verifying piece movement rules and legality.
         start, end = move
         start_row, start_col = start
-        end_row, end_col = end
+        #end_row, end_col = end
 
         board = game_state["board"]
         piece = board[start_row][start_col]
@@ -242,7 +242,7 @@ class MiniChess:
     Returns:
         - game_state:   dictionary | Dictionary representing the modified game state
     """
-    def make_move(self, game_state, move):
+    def make_move(self, game_state, move, turn_count):
         start = move[0]
         end = move[1]
         start_row, start_col = start
@@ -250,14 +250,23 @@ class MiniChess:
         piece = game_state["board"][start_row][start_col]
         game_state["board"][start_row][start_col] = '.'
         if (game_state["board"][end_row][end_col] != '.'):
-            turn_count = 0
+            draw_count = 0
         game_state["board"][end_row][end_col] = piece
+
+        player = game_state["turn"].capitalize()  #get "White" or "Black"
+        start_notation = f"{chr(start_col + ord('A'))}{5 - start_row}"
+        end_notation = f"{chr(end_col + ord('A'))}{5 - end_row}"
+
+        move_text = f"Turn #{turn_count}: {player} moves from {start_notation} to {end_notation}"
+        with open("gameTrace.txt", "a") as file:  #"a" mode appends to the file
+            file.write(move_text + "\n")
 
         if piece[1] == 'p':  #if moving piece is a pawn
             if (piece[0] == 'w' and end_row == 0) or (piece[0] == 'b' and end_row == 4):  #promotion row
                 game_state["board"][end_row][end_col] = piece[0] + 'Q'  #upgrade to Queen
         
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
+
 
         return game_state
 
@@ -288,7 +297,8 @@ class MiniChess:
     """
     def play(self):
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
-        turn_count = 0
+        #draw_count = 0
+        turn_number = 1
         while True:
             self.display_board(self.current_game_state)
 
@@ -305,12 +315,11 @@ class MiniChess:
                 print("Invalid move. Try again.")
                 continue
 
-            self.make_move(self.current_game_state, move)
-            turn_count += 1 #increment turn_count
-
-            if turn_count >= 20:
-                print("Draw! No captures have been made in 10 turns.")
-                break
+            self.make_move(self.current_game_state, move, turn_number)
+            turn_number +=1
+            #if draw_count >= 20:
+                #print("Draw! No captures have been made in 10 turns.")
+                #break
 
     def is_game_over(self, game_state):
         #checks if a King has been captured and determines the winner
