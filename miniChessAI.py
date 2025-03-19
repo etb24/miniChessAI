@@ -6,6 +6,8 @@ import argparse
 class MiniChess:
     def __init__(self):
         self.current_game_state = self.init_board()
+        self.turn_number = 1  #counter to track full turns in the game
+        self.no_capture_count = 0  #counter to track half-moves without captures
 
     """
     Initialize the board
@@ -249,9 +251,19 @@ class MiniChess:
         end_row, end_col = end
         piece = game_state["board"][start_row][start_col]
         game_state["board"][start_row][start_col] = '.'
-        if (game_state["board"][end_row][end_col] != '.'):
-            draw_count = 0
+
+        #check if a capture was made
+        was_capture = game_state["board"][end_row][end_col] != '.'
+        
+        #update draw counter
+        if was_capture:
+            self.no_capture_count = 0  #reset counter if a capture was made
+        else:
+            self.no_capture_count += 1  #increment counter if no capture
+            
         game_state["board"][end_row][end_col] = piece
+
+        
 
         player = game_state["turn"].capitalize()  #get "White" or "Black"
         start_notation = f"{chr(start_col + ord('A'))}{5 - start_row}"
@@ -297,13 +309,20 @@ class MiniChess:
     """
     def play(self):
         print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
-        #draw_count = 0
-        turn_number = 1
+
+        
         while True:
             self.display_board(self.current_game_state)
 
             if self.is_game_over(self.current_game_state):
                 break  #exit game if someone wins
+
+            # Check for draw
+            if self.check_for_draw():
+                print(f"Draw! No pieces have been captured in 10 turns.")
+                with open("gameTrace.txt", "a") as file:
+                    file.write(f"\nDraw after {turn_number} turns (no captures in 10 turns)\n")
+                break
 
             move = input(f"{self.current_game_state['turn'].capitalize()} to move: ")
             if move.lower() == 'exit':
@@ -316,10 +335,15 @@ class MiniChess:
                 continue
 
             self.make_move(self.current_game_state, move, turn_number)
-            turn_number +=1
-            #if draw_count >= 20:
-                #print("Draw! No captures have been made in 10 turns.")
-                #break
+
+            #increment turn number only after both players have moved
+            if self.current_game_state["turn"] == "white":
+                turn_number += 1
+
+
+    def check_for_draw(self):
+        return self.no_capture_count >= 20  #20 half-moves (10 full turns)
+    
 
     def is_game_over(self, game_state):
         #checks if a King has been captured and determines the winner
