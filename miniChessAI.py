@@ -4,10 +4,24 @@ import time
 import argparse
 
 class MiniChess:
-    def __init__(self):
+    def __init__(self, max_time=5, max_turns=100, use_alpha_beta=True, play_mode="H-H", heuristic="e0"):
         self.current_game_state = self.init_board()
+        self.max_time = max_time  #maximum time allowed for AI move in seconds
+        self.use_alpha_beta = use_alpha_beta  #whether to use alpha-beta pruning
+        self.play_mode = play_mode  # H-H, H-AI, AI-H, AI-AI
+        self.heuristic = heuristic  # e0, e1, e2
         self.turn_number = 1  #counter to track full turns in the game
         self.no_capture_count = 0  #counter to track half-moves without captures
+
+        # Statistics tracking for AI
+        self.states_explored = 0
+        self.states_by_depth = {}
+        self.total_branches = 0  # For calculating average branching factor
+        self.total_moves = 0  # For calculating average branching factor
+    
+        # Output file setup
+        alpha_beta_str = "true" if use_alpha_beta else "false"
+        self.output_file = f"gameTrace-{alpha_beta_str}-{max_time}-{max_turns}.txt"
 
     """
     Initialize the board
@@ -270,7 +284,7 @@ class MiniChess:
         end_notation = f"{chr(end_col + ord('A'))}{5 - end_row}"
 
         move_text = f"Turn #{turn_count}: {player} moves from {start_notation} to {end_notation}"
-        with open("gameTrace.txt", "a") as file:  #"a" mode appends to the file
+        with open(self.output_file, "a") as file:  #"a" mode appends to the file
             file.write(move_text + "\n")
 
         if piece[1] == 'p':  #if moving piece is a pawn
@@ -279,6 +293,11 @@ class MiniChess:
         
         game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
 
+        #write board state after move
+        file.write("\nNew board configuration:\n")
+        for i, row in enumerate(game_state["board"]):
+            file.write(f"{5-i}  {' '.join(piece.rjust(2) for piece in row)}\n")
+        file.write("\n   A  B  C  D  E\n")
 
         return game_state
 
@@ -298,6 +317,34 @@ class MiniChess:
             return (start, end)
         except:
             return None
+        
+    def write_game_parameters(self):
+        with open(self.output_file, "w") as file:
+            #game parameters
+            file.write("Game Parameters:\n")
+            
+            #timeout value
+            file.write(f"a) Timeout: {self.max_time} seconds\n")
+            
+            #max number of turns for draw
+            file.write(f"b) Max turns for draw: 10\n")
+            
+            #play modes
+            file.write(f"c) Play mode: {self.play_mode}\n")
+            
+            #alpha-beta setting (if AI is involved)
+            if "AI" in self.play_mode:
+                file.write(f"d) Alpha-beta: {'on' if self.use_alpha_beta else 'off'}\n")
+            
+            #heuristic used (if AI is involved)
+            if "AI" in self.play_mode:
+                file.write(f"e) Heuristic: {self.heuristic}\n")
+            
+            #initial board configuration
+            file.write("\nInitial board configuration:\n")
+            for i, row in enumerate(self.current_game_state["board"]):
+                file.write(f"{5-i}  {' '.join(piece.rjust(2) for piece in row)}\n")
+            file.write("\n   A  B  C  D  E\n\n")
 
     """
     Game loop
@@ -308,8 +355,8 @@ class MiniChess:
         - None
     """
     def play(self):
-        print("Welcome to Mini Chess! Enter moves as 'B2 B3'. Type 'exit' to quit.")
-
+        #write game parameters and initial state to file
+        self.write_game_parameters()
         
         while True:
             self.display_board(self.current_game_state)
@@ -317,10 +364,10 @@ class MiniChess:
             if self.is_game_over(self.current_game_state):
                 break  #exit game if someone wins
 
-            # Check for draw
+            #check for draw
             if self.check_for_draw():
                 print(f"Draw! No pieces have been captured in 10 turns.")
-                with open("gameTrace.txt", "a") as file:
+                with open(self.output_file, "a") as file:
                     file.write(f"\nDraw after {turn_number} turns (no captures in 10 turns)\n")
                 break
 
@@ -361,5 +408,93 @@ class MiniChess:
         return False  #game continues
 
 if __name__ == "__main__":
+    print("Welcome to Mini Chess!")
+    print("Configure your game settings.\n")
+    
+    #configure play mode
+    print("Available play modes:")
+    print("1. Human vs Human (H-H)")
+    print("2. Human vs AI (H-AI)")
+    print("3. AI vs Human (AI-H)")
+    print("4. AI vs AI (AI-AI)")
+    
+    while True:
+        mode_choice = input("Enter your choice (1-4): ")
+        if mode_choice in ["1", "2", "3", "4"]:
+            break
+        print("Invalid choice. Please enter a number between 1 and 4.")
+    
+    mode_map = {
+        "1": "H-H", 
+        "2": "H-AI", 
+        "3": "AI-H", 
+        "4": "AI-AI"
+    }
+    play_mode = mode_map[mode_choice]
+    
+    #only ask for AI settings if AI is involved
+    max_time = 5.0
+    use_alpha_beta = True
+    heuristic = "e0"
+    
+    if play_mode != "H-H":
+        print("\nAI Configuration:")
+        
+        #configure time limit
+        while True:
+            time_input = input("Enter maximum thinking time for AI (in seconds, recommended 1-10): ")
+            try:
+                max_time = float(time_input)
+                if max_time > 0:
+                    break
+                print("Time must be greater than 0.")
+            except ValueError:
+                print("Please enter a valid number.")
+        
+        #configure alpha-beta
+        while True:
+            ab_input = input("Use alpha-beta pruning? (y/n): ").lower()
+            if ab_input in ["y", "n", "yes", "no"]:
+                use_alpha_beta = ab_input.startswith("y")
+                break
+            print("Please enter 'y' or 'n'.")
+        
+        #configure heuristic
+        print("\nAvailable heuristics:")
+        print("1. e0 - Basic material evaluation")
+        print("2. e1 - Material + mobility + pawn advancement")
+        print("3. e2 - Advanced evaluation (material, piece activity, center control, king safety)")
+        
+        while True:
+            heuristic_choice = input("Choose a heuristic (1-3): ")
+            if heuristic_choice in ["1", "2", "3"]:
+                heuristic = "e" + str(int(heuristic_choice) - 1)
+                break
+            print("Invalid choice. Please enter a number between 1 and 3.")
+    
+    #cisplay selected settings
+    print("\nSelected Settings:")
+    print(f"Play Mode: {play_mode}")
+    
+    if play_mode != "H-H":
+        print(f"AI Thinking Time: {max_time} seconds")
+        print(f"Alpha-Beta Pruning: {'Enabled' if use_alpha_beta else 'Disabled'}")
+        print(f"Heuristic: {heuristic}")
+    
+    #confirm settings
+    confirm = input("\nStart game with these settings? (y/n): ").lower()
+    if not confirm.startswith("y"):
+        print("Game setup cancelled. Please run the program again to configure.")
+        exit(1)
+    
+    #create and run the game
+    game = MiniChess(
+        max_time=max_time,
+        use_alpha_beta=use_alpha_beta,
+        play_mode=play_mode,
+        heuristic=heuristic
+    )
+
+
     game = MiniChess()
     game.play()
