@@ -832,29 +832,21 @@ class MiniChess:
             is_over, winner = self.is_game_over(self.current_game_state)
             if is_over:
                 self.display_board(self.current_game_state)
-                #game is over due to king capture
-                if not any('wK' in row for row in self.current_game_state["board"]):
-                    winner = "black"
+                if winner is None:
+                    # Draw
+                    print(f"\nDraw! No pieces have been captured in 20 moves.")
+                    
+                    # Log draw
+                    with open(self.output_file, "a") as file:
+                        file.write(f"\nDraw after {self.turn_number} turns (no captures in 20 moves)\n")
                 else:
-                    winner = "white"
+                    # Someone won
+                    print(f"\n{winner.capitalize()} wins in {self.turn_number} turns!")
                     
-                print(f"\n{winner.capitalize()} wins in {self.turn_number} turns!")
-                
-                #log final result
-                with open(self.output_file, "a") as file:
-                    file.write(f"\n{winner.capitalize()} won in {self.turn_number} turns\n")
-                    
-                game_over = True
-                
-            #check for draw
-            elif self.check_for_draw():
-                self.display_board(self.current_game_state)
-                print(f"\nDraw! No pieces have been captured in {self.max_turns} turns.")
-                
-                #log draw
-                with open(self.output_file, "a") as file:
-                    file.write(f"\nDraw after {self.turn_number} turns (no captures in {self.max_turns} turns)\n")
-                    
+                    # Log final result
+                    with open(self.output_file, "a") as file:
+                        file.write(f"\n{winner.capitalize()} won in {self.turn_number} turns\n")
+                        
                 game_over = True
             
             #increment turn number if it's white's turn next
@@ -953,7 +945,7 @@ if __name__ == "__main__":
                 break
             print("Invalid choice. Please enter a number between 1 and 3.")
     
-    #cisplay selected settings
+    #display selected settings
     print("\nSelected Settings:")
     print(f"Play Mode: {play_mode}")
     
