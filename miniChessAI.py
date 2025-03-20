@@ -266,32 +266,36 @@ class MiniChess:
     Returns:
         - game_state:   dictionary | Dictionary representing the modified game state
     """
-    def make_move(self, game_state, move):
+    def make_move(self, game_state, move, is_real_move = True):
+        #create a copy to avoid modifying the original
+        new_state = copy.deepcopy(game_state)
+
         start = move[0]
         end = move[1]
         start_row, start_col = start
         end_row, end_col = end
-        piece = game_state["board"][start_row][start_col]
-        game_state["board"][start_row][start_col] = '.'
+        piece = new_state["board"][start_row][start_col]
+        new_state["board"][start_row][start_col] = '.'
 
         #check if a capture was made
-        was_capture = game_state["board"][end_row][end_col] != '.'
+        was_capture = new_state["board"][end_row][end_col] != '.'
         
-        #update draw counter
-        if was_capture:
-            self.no_capture_count = 0  #reset counter if a capture was made
-        else:
-            self.no_capture_count += 1  #increment counter if no capture
+        #only update the counter for real moves, not during search
+        if is_real_move:
+            if was_capture:
+                self.no_capture_count = 0  #reset counter if a capture was made
+            else:
+                self.no_capture_count += 1  #increment counter if no capture
             
-        game_state["board"][end_row][end_col] = piece
+        new_state["board"][end_row][end_col] = piece
 
         if piece[1] == 'p':  #if moving piece is a pawn
             if (piece[0] == 'w' and end_row == 0) or (piece[0] == 'b' and end_row == 4):  #promotion row
-                game_state["board"][end_row][end_col] = piece[0] + 'Q'  #upgrade to Queen
+                new_state["board"][end_row][end_col] = piece[0] + 'Q'  #upgrade to Queen
         
-        game_state["turn"] = "black" if game_state["turn"] == "white" else "white"
+        new_state["turn"] = "black" if new_state["turn"] == "white" else "white"
 
-        return game_state
+        return new_state
 
     """
     Parse the input string and modify it into board coordinates
@@ -444,7 +448,7 @@ class MiniChess:
             for move in all_moves:
                 #make the move
                 new_state = copy.deepcopy(temp_state)
-                self.make_move(new_state, move)
+                self.make_move(new_state, move, False)
                 
                 #recursive minimax call
                 score, _ = self.minimax(new_state, depth - 1, False)
@@ -461,7 +465,7 @@ class MiniChess:
             for move in all_moves:
                 #make the move
                 new_state = copy.deepcopy(temp_state)
-                self.make_move(new_state, move)
+                self.make_move(new_state, move, False)
                 
                 #recursive minimax call
                 score, _ = self.minimax(new_state, depth - 1, True)
@@ -515,7 +519,7 @@ class MiniChess:
             for move in all_moves:
                 #make the move
                 new_state = copy.deepcopy(temp_state)
-                self.make_move(new_state, move)
+                self.make_move(new_state, move, False)
                 
                 #recursive alpha-beta call
                 score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, False)
@@ -536,7 +540,7 @@ class MiniChess:
             for move in all_moves:
                 #make the move
                 new_state = copy.deepcopy(temp_state)
-                self.make_move(new_state, move)
+                self.make_move(new_state, move, False)
                 
                 #recursive alpha-beta call
                 score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, True)
@@ -826,7 +830,7 @@ class MiniChess:
                     break
             
             #make the move
-            self.current_game_state = self.make_move(self.current_game_state, move)
+            self.current_game_state = self.make_move(self.current_game_state, move, True)
             
             #check if game is over
             is_over, winner = self.is_game_over(self.current_game_state)
