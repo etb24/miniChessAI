@@ -353,13 +353,16 @@ class MiniChess:
         
         start_notation = self.format_coord(move[0])
         end_notation = self.format_coord(move[1])
+
+        current_state = self.current_game_state
+
         
         with open(self.output_file, "a") as file:
-            # Log player and turn information
+            #log player and turn information
             file.write(f"\n{player_color.capitalize()} (Turn #{self.turn_number})\n")
             file.write(f"Move: from {start_notation} to {end_notation}\n")
             
-            # Log AI-specific information if this is an AI move
+            #log AI-specific information if this is an AI move
             if time_taken is not None:
                 file.write(f"Time for this action: {time_taken:.2f} sec\n")
             
@@ -370,17 +373,17 @@ class MiniChess:
                 algorithm = "alpha-beta" if self.use_alpha_beta else "minimax"
                 file.write(f"{algorithm} search score: {search_score}\n")
             
-            # Log the updated board state
+            #log the updated board state
             file.write("\nBoard configuration:\n")
-            for i, row in enumerate(self.current_game_state["board"]):
+            for i, row in enumerate(current_state["board"]):
                 file.write(f"{5-i}  {' '.join(piece.rjust(2) for piece in row)}\n")
             file.write("\n   A  B  C  D  E\n\n")
             
-            # Log AI statistics if this is an AI move
+            #log AI statistics if this is an AI move
             if time_taken is not None:
                 file.write(f"Cumulative states explored: {self.states_explored}\n")
                 
-                # States explored by depth
+                #states explored by depth
                 depth_stats = []
                 for depth, count in sorted(self.states_by_depth.items()):
                     if count > 0:
@@ -388,25 +391,13 @@ class MiniChess:
                 
                 if depth_stats:
                     file.write(f"Cumulative states explored by depth: {' '.join(depth_stats)}\n")
-                
-                # Percentages by depth
-                if self.states_explored > 0:
-                    percentage_stats = []
-                    for depth, count in sorted(self.states_by_depth.items()):
-                        if count > 0:
-                            percentage = (count / self.states_explored) * 100
-                            percentage_stats.append(f"{depth}={percentage:.1f}%")
-                    
-                    if percentage_stats:
-                        file.write(f"Cumulative % states explored by depth: {' '.join(percentage_stats)}\n")
-                
-                # Average branching factor
-                if self.total_nodes > 0:
-                    avg_branching = self.total_branches / self.total_nodes
-                    file.write(f"Average branching factor: {avg_branching:.1f}\n")
 
 
-    def minimax(self, game_state, depth, maximizing_player):
+    def minimax(self, game_state, depth, maximizing_player, start_time):
+
+        if time.time() - start_time > self.max_time:
+            return 0, None
+        
         #update statistics
         self.states_explored += 1
         
@@ -451,7 +442,7 @@ class MiniChess:
                 self.make_move(new_state, move, False)
                 
                 #recursive minimax call
-                score, _ = self.minimax(new_state, depth - 1, False)
+                score, _ = self.minimax(new_state, depth - 1, False, start_time)
                 
                 if score > max_score:
                     max_score = score
@@ -468,7 +459,7 @@ class MiniChess:
                 self.make_move(new_state, move, False)
                 
                 #recursive minimax call
-                score, _ = self.minimax(new_state, depth - 1, True)
+                score, _ = self.minimax(new_state, depth - 1, True, start_time)
                 
                 if score < min_score:
                     min_score = score
@@ -476,7 +467,10 @@ class MiniChess:
                     
             return min_score, best_move
         
-    def alpha_beta(self, game_state, depth, alpha, beta, maximizing_player):
+    def alpha_beta(self, game_state, depth, alpha, beta, maximizing_player, start_time):
+
+        if time.time() - start_time > self.max_time:
+            return 0, None
         
         #update statistics
         self.states_explored += 1
@@ -522,7 +516,7 @@ class MiniChess:
                 self.make_move(new_state, move, False)
                 
                 #recursive alpha-beta call
-                score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, False)
+                score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, False, start_time)
                 
                 if score > max_score:
                     max_score = score
@@ -543,7 +537,7 @@ class MiniChess:
                 self.make_move(new_state, move, False)
                 
                 #recursive alpha-beta call
-                score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, True)
+                score, _ = self.alpha_beta(new_state, depth - 1, alpha, beta, True, start_time)
                 
                 if score < min_score:
                     min_score = score
@@ -571,14 +565,14 @@ class MiniChess:
         while True:
             #check if we have time for another iteration
             current_time = time.time()
-            if current_time - start_time > self.max_time * 0.8:  #use 80% of allocated time
+            if current_time - start_time > self.max_time * 0.7:  #use 70% of allocated time
                 break
                 
             #choose search method based on settings
             if self.use_alpha_beta:
-                score, move = self.alpha_beta(self.current_game_state, depth, float('-inf'), float('inf'), self.current_game_state["turn"] == "white")
+                score, move = self.alpha_beta(self.current_game_state, depth, float('-inf'), float('inf'), self.current_game_state["turn"] == "white", start_time)
             else:
-                score, move = self.minimax(self.current_game_state, depth, self.current_game_state["turn"] == "white")
+                score, move = self.minimax(self.current_game_state, depth, self.current_game_state["turn"] == "white", start_time)
             
             #update best move if found
             if move is not None:
@@ -589,7 +583,7 @@ class MiniChess:
             depth += 1
             
             #break if time is almost up
-            if time.time() - start_time > self.max_time * 0.9:
+            if time.time() - start_time > self.max_time * 0.8:
                 break
         
         end_time = time.time()
@@ -605,17 +599,13 @@ class MiniChess:
         
         heuristic_score = self.evaluate_board(self.current_game_state)
         
-        #log the move and statistics
-        player_color = self.current_game_state["turn"]
-        self.log_move(best_move, player_color, elapsed_time, heuristic_score, best_score)
-        
         #print info to console
         print(f"AI move: {self.format_coord(best_move[0])} to {self.format_coord(best_move[1])}")
         print(f"Time taken: {elapsed_time:.3f} seconds")
         print(f"Search depth: {depth-1}")
         print(f"States explored: {self.states_explored}")
-        
-        return best_move
+
+        return best_move, elapsed_time, heuristic_score, best_score
     
     def evaluate_board(self, game_state):
         board = game_state["board"]
@@ -806,7 +796,11 @@ class MiniChess:
             if is_ai_turn:
                 #AI's turn
                 print(f"AI ({current_player}) is thinking...")
-                move = self.ai_move()
+                move, elapsed_time, heuristic_score, best_score = self.ai_move()
+    
+                #apply and log move
+                self.current_game_state = self.make_move(self.current_game_state, move, True)
+                self.log_move(move, current_player, elapsed_time, heuristic_score, best_score)
             else:
                 #human's turn
                 while True:
@@ -824,13 +818,13 @@ class MiniChess:
                     if not self.is_valid_move(self.current_game_state, move):
                         print("Invalid move. Please try again.")
                         continue
-                    
-                    #log human move
-                    self.log_move(move, current_player)
                     break
+                #make the move
+                self.current_game_state = self.make_move(self.current_game_state, move, True)
+                #log human move
+                self.log_move(move, current_player)
             
-            #make the move
-            self.current_game_state = self.make_move(self.current_game_state, move, True)
+            
             
             #check if game is over
             is_over, winner = self.is_game_over(self.current_game_state)
