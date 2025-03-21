@@ -664,14 +664,14 @@ class MiniChess:
         white_position = 0
         black_position = 0
         
-         # Count pieces and calculate position scores
+         #count pieces and calculate position scores
         for row in range(5):
             for col in range(5):
                 piece = board[row][col]
                 if piece == '.':
                     continue
                     
-                # Count pieces
+                #count pieces
                 if piece == 'wp': 
                     white_p += 1
                     white_position += pawn_table[row][col]
@@ -689,7 +689,7 @@ class MiniChess:
                     white_position += king_table[row][col]
                 elif piece == 'bp': 
                     black_p += 1
-                    black_position += pawn_table[4-row][col]  # Flip for black
+                    black_position += pawn_table[4-row][col]  #flip for black
                 elif piece == 'bB': 
                     black_B += 1
                     black_position += bishop_table[4-row][col]
@@ -711,7 +711,7 @@ class MiniChess:
             # e0 = (#wp + 3·#wB + 3·#wN + 9·#wQ + 999·wK) − (#bp + 3·#bB + 3·#bN + 9·#bQ + 999·bK)
             return white_material - black_material
         
-        #e1 - for example, material + piece positioning
+        #e1 -  material + piece positioning
         elif self.heuristic == "e1":
             white_score = white_material + white_position
             black_score = black_material + black_position
@@ -769,7 +769,7 @@ class MiniChess:
             #adjust scores based on piece safety
             white_score -= white_attacked * 0.5  #penalize having pieces under attack
             black_score -= black_attacked * 0.5
-                
+
             return white_score - black_score
             
         #default to e0 if invalid heuristic
