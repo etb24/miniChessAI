@@ -609,70 +609,120 @@ class MiniChess:
     
     def evaluate_board(self, game_state):
         board = game_state["board"]
+
+        #position tables for each piece type
+        pawn_table = [
+            [0.0, 0.0, 0.0, 0.0, 0.0],   # Row 0 (top) - promotion row for white
+            [2.0, 2.0, 2.5, 2.0, 2.0],   # Row 1 - near promotion
+            [1.0, 1.2, 1.5, 1.2, 1.0],   # Row 2
+            [0.5, 0.6, 0.8, 0.6, 0.5],   # Row 3
+            [0.0, 0.0, 0.0, 0.0, 0.0]    # Row 4 (bottom)
+        ]
+
+        knight_table = [
+            [0.0, 0.5, 1.0, 0.5, 0.0],
+            [0.5, 1.0, 1.5, 1.0, 0.5],
+            [1.0, 1.5, 2.0, 1.5, 1.0],
+            [0.5, 1.0, 1.5, 1.0, 0.5],
+            [0.0, 0.5, 1.0, 0.5, 0.0]
+        ]
+
+        bishop_table = [
+            [0.5, 0.0, 0.0, 0.0, 0.5],   #bishops better on diagonals
+            [0.0, 1.0, 0.5, 1.0, 0.0],
+            [0.0, 0.5, 1.0, 0.5, 0.0],
+            [0.0, 1.0, 0.5, 1.0, 0.0],
+            [0.5, 0.0, 0.0, 0.0, 0.5]
+        ]
+
+        queen_table = [
+            [0.0, 0.2, 0.2, 0.2, 0.0],
+            [0.2, 0.5, 0.5, 0.5, 0.2],   #queen better in center
+            [0.2, 0.5, 1.0, 0.5, 0.2],
+            [0.2, 0.5, 0.5, 0.5, 0.2],
+            [0.0, 0.2, 0.2, 0.2, 0.0]
+        ]
+
+        king_table = [
+            [0.5, 0.0, 0.0, 0.0, 0.5],   #king safer on edges in this small board
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.0, 0.0, 0.0, 0.0, 0.0],
+            [0.5, 0.0, 0.0, 0.0, 0.5]
+        ]
         
+
+
         #count pieces
         white_p = black_p = 0  # pawns
         white_B = black_B = 0  # bishops
         white_N = black_N = 0  # knights
         white_Q = black_Q = 0  # queens
         white_K = black_K = 0  # kings
+
+        #position scores
+        white_position = 0
+        black_position = 0
         
-        for row in board:
-            for piece in row:
-                if piece == 'wp': white_p += 1
-                elif piece == 'wB': white_B += 1
-                elif piece == 'wN': white_N += 1
-                elif piece == 'wQ': white_Q += 1
-                elif piece == 'wK': white_K += 1
-                elif piece == 'bp': black_p += 1
-                elif piece == 'bB': black_B += 1
-                elif piece == 'bN': black_N += 1
-                elif piece == 'bQ': black_Q += 1
-                elif piece == 'bK': black_K += 1
-        
+         # Count pieces and calculate position scores
+        for row in range(5):
+            for col in range(5):
+                piece = board[row][col]
+                if piece == '.':
+                    continue
+                    
+                # Count pieces
+                if piece == 'wp': 
+                    white_p += 1
+                    white_position += pawn_table[row][col]
+                elif piece == 'wB': 
+                    white_B += 1
+                    white_position += bishop_table[row][col]
+                elif piece == 'wN': 
+                    white_N += 1
+                    white_position += knight_table[row][col]
+                elif piece == 'wQ': 
+                    white_Q += 1
+                    white_position += queen_table[row][col]
+                elif piece == 'wK': 
+                    white_K += 1
+                    white_position += king_table[row][col]
+                elif piece == 'bp': 
+                    black_p += 1
+                    black_position += pawn_table[4-row][col]  # Flip for black
+                elif piece == 'bB': 
+                    black_B += 1
+                    black_position += bishop_table[4-row][col]
+                elif piece == 'bN': 
+                    black_N += 1
+                    black_position += knight_table[4-row][col]
+                elif piece == 'bQ': 
+                    black_Q += 1
+                    black_position += queen_table[4-row][col]
+                elif piece == 'bK': 
+                    black_K += 1
+                    black_position += king_table[4-row][col]
+
+        white_material = (white_p + 3*white_B + 3*white_N + 9*white_Q + 999*white_K)
+        black_material = (black_p + 3*black_B + 3*black_N + 9*black_Q + 999*black_K)
+
         #e0
         if self.heuristic == "e0":
             # e0 = (#wp + 3·#wB + 3·#wN + 9·#wQ + 999·wK) − (#bp + 3·#bB + 3·#bN + 9·#bQ + 999·bK)
-            white_score = (white_p + 3*white_B + 3*white_N + 9*white_Q + 999*white_K)
-            black_score = (black_p + 3*black_B + 3*black_N + 9*black_Q + 999*black_K)
-            return white_score - black_score
+            return white_material - black_material
         
-        #e1 - for example, material + mobility + piece positioning
+        #e1 - for example, material + piece positioning
         elif self.heuristic == "e1":
-            #base material value
-            white_score = (white_p + 3*white_B + 3*white_N + 9*white_Q + 999*white_K)
-            black_score = (black_p + 3*black_B + 3*black_N + 9*black_Q + 999*black_K)
-            
-            #add position-based bonuses
-            for row in range(5):
-                for col in range(5):
-                    piece = board[row][col]
-                    if piece == '.':
-                        continue
-                        
-                    #center control bonus (0.2 points for controlling central squares)
-                    if 1 <= row <= 3 and 1 <= col <= 3:
-                        if piece[0] == 'w':
-                            white_score += 0.2
-                        else:
-                            black_score += 0.2
-                    
-                    #pawn advancement bonus
-                    if piece == 'wp':
-                        #more advanced pawns get higher bonus (0 to 0.8)
-                        white_score += 0.2 * (4 - row)
-                    elif piece == 'bp':
-                        #more advanced pawns get higher bonus (0 to 0.8)
-                        black_score += 0.2 * row
+            white_score = white_material + white_position
+            black_score = black_material + black_position
             
             return white_score - black_score
         
-        #e2 - material + piece safety + king safety
+        #e2 - material + position + piece safety
         elif self.heuristic == "e2":
-            #base material value
-            white_score = (white_p + 3*white_B + 3*white_N + 9*white_Q + 999*white_K)
-            black_score = (black_p + 3*black_B + 3*black_N + 9*black_Q + 999*black_K)
-            
+            white_score = white_material + white_position
+            black_score = black_material + black_position
+
             #piece safety - penalize undefended pieces
             white_attacked = 0
             black_attacked = 0
@@ -719,42 +769,7 @@ class MiniChess:
             #adjust scores based on piece safety
             white_score -= white_attacked * 0.5  #penalize having pieces under attack
             black_score -= black_attacked * 0.5
-            
-            #king safety bonus - count safe squares around king
-            white_king_pos = None
-            black_king_pos = None
-            
-            #find kings
-            for row in range(5):
-                for col in range(5):
-                    if board[row][col] == 'wK':
-                        white_king_pos = (row, col)
-                    elif board[row][col] == 'bK':
-                        black_king_pos = (row, col)
-            
-            #evaluate safe moves for kings
-            if white_king_pos:
-                row, col = white_king_pos
-                for dr in [-1, 0, 1]:
-                    for dc in [-1, 0, 1]:
-                        if dr == 0 and dc == 0:
-                            continue
-                        new_pos = (row + dr, col + dc)
-                        if 0 <= new_pos[0] < 5 and 0 <= new_pos[1] < 5:
-                            if new_pos not in black_attack_squares:
-                                white_score += 0.3  #bonus for each safe square the king can move to
-            
-            if black_king_pos:
-                row, col = black_king_pos
-                for dr in [-1, 0, 1]:
-                    for dc in [-1, 0, 1]:
-                        if dr == 0 and dc == 0:
-                            continue
-                        new_pos = (row + dr, col + dc)
-                        if 0 <= new_pos[0] < 5 and 0 <= new_pos[1] < 5:
-                            if new_pos not in white_attack_squares:
-                                black_score += 0.3  #bonus for each safe square the king can move to
-            
+                
             return white_score - black_score
             
         #default to e0 if invalid heuristic
