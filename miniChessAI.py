@@ -101,6 +101,7 @@ class MiniChess:
     Returns:
         - valid moves:   list | A list of nested tuples corresponding to valid moves [((start_row, start_col),(end_row, end_col)),((start_row, start_col),(end_row, end_col))]
     """
+    """
     def valid_moves(self, game_state):
         valid_moves_list = []
         board = game_state["board"]
@@ -123,6 +124,7 @@ class MiniChess:
                 valid_moves_list.extend(possible_moves)
 
         return valid_moves_list
+    """
     
 
     def generate_moves_for_piece(self, piece, position, board):
