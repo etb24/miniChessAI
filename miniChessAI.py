@@ -4,7 +4,7 @@ import time
 import argparse
 
 class MiniChess:
-    def __init__(self, max_time=5, max_turns=100, use_alpha_beta=True, play_mode="H-H", heuristic="e0"):
+    def __init__(self, max_time=5.0, max_turns=100, use_alpha_beta=True, play_mode="H-H", heuristic="e0"):
         self.current_game_state = self.init_board()
         self.max_time = max_time  #maximum time allowed for AI move in seconds
         self.use_alpha_beta = use_alpha_beta  #whether to use alpha-beta pruning
@@ -329,8 +329,8 @@ class MiniChess:
             #timeout value
             file.write(f"a) Timeout: {self.max_time} seconds\n")
             
-            #max number of turns for draw
-            file.write(f"b) Max turns for draw: 10\n")
+            #max number of turns for draw (20 half-moves = 10 full turns)
+            file.write(f"b) Max turns for draw: 10 (20 half-moves)\n")
             
             #play modes
             file.write(f"c) Play mode: {self.play_mode}\n")
@@ -578,7 +578,7 @@ class MiniChess:
             if move is not None:
                 best_move = move
                 best_score = score
-                
+            
             #increase depth for next iteration
             depth += 1
             
@@ -591,16 +591,22 @@ class MiniChess:
         
         if best_move is None:
             #fallback: choose a random valid move
-            print("Warning: AI could not find a move in time. Choosing randomly.")
+            print("Warning: AI could not find a move in time or no valid moves available.")
             valid_moves = self.valid_moves(self.current_game_state)
             if valid_moves:
                 best_move = valid_moves[0]
                 best_score = 0
+            else:
+                print("No valid moves available for AI. Stalemate or checkmate.")
+                return None, elapsed_time, None, None
         
         heuristic_score = self.evaluate_board(self.current_game_state)
         
         #print info to console
-        print(f"AI move: {self.format_coord(best_move[0])} to {self.format_coord(best_move[1])}")
+        if best_move is not None:
+            print(f"AI move: {self.format_coord(best_move[0])} to {self.format_coord(best_move[1])}")
+        else:
+            print("AI could not make a move.")
         print(f"Time taken: {elapsed_time:.3f} seconds")
         print(f"Search depth: {depth-1}")
         print(f"States explored: {self.states_explored}")

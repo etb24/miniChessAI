@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Output files
+gameTrace*.txt
+
+# Editor/IDE
+.vscode/
+.idea/
+.lsp/
+.clj-kondo/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# OneDrive temp files
+~$*

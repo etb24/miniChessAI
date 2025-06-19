@@ -1,9 +1,0 @@
-Turn #1: White moves from B2 to B3
-Turn #2: Black moves from C4 to B3
-Turn #3: White moves from C2 to B3
-Turn #4: Black moves from B5 to B3
-Turn #5: White moves from D1 to B3
-Turn #6: Black moves from D4 to D3
-Turn #7: White moves from B3 to C3
-Turn #8: Black moves from D3 to D2
-Turn #9: White moves from C3 to A5
